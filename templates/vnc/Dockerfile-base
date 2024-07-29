@@ -1,0 +1,36 @@
+FROM nvidia/cuda:11.6.1-cudnn8-devel-ubuntu20.04
+
+SHELL ["/bin/bash", "-c"]
+
+RUN apt-get update -y
+RUN apt-get upgrade -y
+RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
+RUN apt update
+
+RUN apt-get install -y ffmpeg libsm6 libxext6 ninja-build libglib2.0-0 libsm6 libxrender-dev libxext6
+
+# install python 3.10
+RUN apt install software-properties-common -y
+RUN add-apt-repository --yes ppa:deadsnakes/ppa
+RUN apt install python3.10 python3.10-venv python3.10-dev -y
+RUN apt install curl -y && ls -la /usr/bin/python3 && rm /usr/bin/python3 && ln -s python3.10 /usr/bin/python3 && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10 && python3 -m pip --version
+
+RUN apt install libgtk2.0-dev pkg-config -y
+RUN apt-get purge libopencv* && apt install libopencv* -y
+RUN apt install x11-apps -y
+RUN apt install wget -y
+RUN apt install nano -y
+RUN apt install git -y
+RUN apt-get install python3-tk -y
+RUN apt install tmux -y
+RUN apt install zip unzip -y
+
+# install pip
+RUN apt install python3-pip -y
+RUN pip3 install --upgrade pip
+
+# VNC
+RUN DEBIAN_FRONTEND=noninteractive apt install lxde tightvncserver xvfb dbus-x11 x11-utils xfonts-base xfonts-75dpi xfonts-100dpi -y
+RUN apt purge firefox -y
+
+WORKDIR /source
