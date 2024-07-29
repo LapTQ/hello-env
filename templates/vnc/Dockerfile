@@ -1,4 +1,4 @@
-FROM base-laptq-long-term-9
+FROM base-laptq-img
 
 SHELL ["/bin/bash", "-c"]
 
