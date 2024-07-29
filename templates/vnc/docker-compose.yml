@@ -1,0 +1,56 @@
+version: '2.3'
+
+services:
+  
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VNCPASS: password
+        USER_ID: "${USER_ID}"
+        USER_NAME: "${USER_NAME}"
+        GROUP_ID: "${GROUP_ID}"
+        GROUP_NAME: "${GROUP_NAME}"
+    
+    image: laptq-img
+
+    stdin_open: true
+    tty: true
+
+    environment:
+      #DISPLAY: '${DISPLAY}'
+      #QT_X11_NO_MITSHM: 1
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: all
+    
+    volumes:
+      #- /tmp/.X11-unix:/tmp/.X11-unix:rw
+      #- '${HOME}/.Xauthority:/root/.Xauthority'
+      - .:/source
+      - /media:/media
+      - /mnt:/mnt
+      - /home:/home
+    
+    ipc: host
+    shm_size: '2g'
+    privileged: true
+    # network_mode: "host"
+
+    ports:
+      - 127.0.0.1:5903:5901
+
+    # command: "sudo /root/start-vncserver.sh"
+
+    runtime: nvidia
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #       - driver: nvidia
+    #         capabilities:
+    #           - gpu
+              # - utility
+              # - compute
+              # - video
+    #         count: all
