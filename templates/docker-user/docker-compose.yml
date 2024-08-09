@@ -1,0 +1,25 @@
+version: '2.3'
+
+services:
+  
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USER_ID: "${USER_ID}"
+        USER_NAME: "${USER_NAME}"
+        GROUP_ID: "${GROUP_ID}"
+        GROUP_NAME: "${GROUP_NAME}"
+    
+    image: laptq-img-user
+
+    stdin_open: true
+    tty: true
+    
+    volumes:
+      - /home:/home
+    
+    ipc: host
+    shm_size: '2g'
+    privileged: true
