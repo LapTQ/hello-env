@@ -13,14 +13,14 @@ RUN apt purge firefox -y
 
 ARG VNCPASS
 RUN mkdir -p /root/.vnc
-COPY scripts/xstartup /root/.vnc/
+COPY xstartup /root/.vnc/
 RUN chmod a+x /root/.vnc/xstartup
 RUN touch /root/.vnc/passwd
 RUN /bin/bash -c "echo -e '${VNCPASS}\n${VNCPASS}\nn' | vncpasswd" > /root/.vnc/passwd
 RUN chmod 400 /root/.vnc/passwd
 RUN chmod go-rwx /root/.vnc
 RUN touch /root/.Xauthority
-COPY scripts/start-vncserver.sh /root/
+COPY start-vncserver.sh /root/
 RUN chmod a+x /root/start-vncserver.sh
 
 
