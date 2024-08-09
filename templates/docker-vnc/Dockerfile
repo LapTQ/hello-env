@@ -9,6 +9,12 @@ RUN apt update
 RUN DEBIAN_FRONTEND=noninteractive apt install lxde tightvncserver xvfb dbus-x11 x11-utils xfonts-base xfonts-75dpi xfonts-100dpi -y
 RUN apt purge firefox -y
 
+# ===== install packages (optional) =====
+# # VLC, and bypass error "VLC is not supposed to be run as root. Sorry."
+# RUN apt install vlc -y
+# RUN sed -i 's/geteuid/getppid/' /usr/bin/vlc
+# =======================================
+
 ARG VNCPASS
 
 RUN mkdir -p /root/.vnc
