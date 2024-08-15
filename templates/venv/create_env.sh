@@ -5,4 +5,9 @@ venv_path=$venv_parent/$venv_name
 source $venv_path/bin/activate
 which python3
 
-pip install --ignore-installed -r requirements.txt
+pip_cache_dir=/path/to/.cache/pip
+tmp_dir=/path/to/tmp
+[[ ! -d $tmp_dir ]] && mkdir -p $tmp_dir
+export TMPDIR=$tmp_dir
+[[ ! -d $pip_cache_dir ]] && mkdir -p $pip_cache_dir
+pip install --cache-dir=$pip_cache_dir -r --ignore-installed requirements.txt --default-timeout=10000
