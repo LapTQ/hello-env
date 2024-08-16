@@ -26,4 +26,4 @@ services:
     ports:
       - 127.0.0.1:5901:5901
 
-    command: "sudo /root/start-vncserver.sh"
+    command: "/root/start-vncserver.sh"
