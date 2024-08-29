@@ -34,3 +34,9 @@ source /path/to/conda/bin/activate your-conda-env
 exec zsh
 ```
 Replace the `/path/to/conda/bin/activate` with path to the installed conda (e.g., `~/miniconda3/bin/activate`).
+
+## References
+
+1. https://anaconda.org/conda-forge/zsh
+2. https://ohmyz.sh
+3. https://github.com/zsh-users/zsh-autosuggestions/blob/master/INSTALL.md
