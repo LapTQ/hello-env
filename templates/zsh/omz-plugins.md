@@ -24,5 +24,9 @@ Then, add `zsh-syntax-highlighting` to the plugins in the `~/.zshrc`.
 
 ## `zsh-history-substring-search`
 
-Do similarly.
+```bash
+git clone https://github.com/zsh-users/zsh-history-substring-search.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-history-substring-search
+```
+
+Then, add `zsh-history-substring-search` to the plugins in the `~/.zshrc`.
 
