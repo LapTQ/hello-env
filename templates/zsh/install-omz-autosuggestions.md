@@ -33,4 +33,4 @@ Add the following lines at the end of the file `~/.bashrc`:
 source /path/to/conda/bin/activate your-conda-env
 exec zsh
 ```
-Replace the `/path/to/conda/bin/activate` with path to the installed conda to (e.g., `~/miniconda3/bin/activate`).
+Replace the `/path/to/conda/bin/activate` with path to the installed conda (e.g., `~/miniconda3/bin/activate`).
