@@ -1,4 +1,4 @@
-# Install Oh My ZSH with zsh-autosuggestions
+# Install Oh My ZSH
 
 ## Install
 
@@ -14,18 +14,6 @@ Install oh-my-zsh
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 ```
 
-Install zsh-autosuggestions
-```bash
-git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-```
-Add the plugin to the list of plugins for Oh My Zsh to load (inside `~/.zshrc`)
-```
-plugins=( 
-    # other plugins...
-    zsh-autosuggestions
-)
-```
-
 ## To automatically access your Zsh shell whenever you SSH into the server
 
 Add the following lines at the end of the file `~/.bashrc`:
@@ -39,4 +27,3 @@ Replace the `/path/to/conda/bin/activate` with path to the installed conda (e.g.
 
 1. https://anaconda.org/conda-forge/zsh
 2. https://ohmyz.sh
-3. https://github.com/zsh-users/zsh-autosuggestions/blob/master/INSTALL.md
