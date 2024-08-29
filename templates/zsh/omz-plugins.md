@@ -22,5 +22,7 @@ git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:
 
 Then, add `zsh-syntax-highlighting` to the plugins in the `~/.zshrc`.
 
+## `zsh-history-substring-search`
 
+Do similarly.
 
