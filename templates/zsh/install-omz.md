@@ -25,6 +25,11 @@ Usage:
 ztheme robbyrussell
 ```
 
+Automatically:
+```bash
+echo "ztheme af-magic" >> ~/.zshrc
+```
+
 ## To automatically access your Zsh shell whenever you SSH into the server
 
 Add the following lines at the end of the file `~/.bashrc`:
