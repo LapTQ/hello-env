@@ -14,6 +14,17 @@ Install oh-my-zsh
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 ```
 
+## Add option to change theme
+
+```bash
+echo "alias ztheme='(){ export ZSH_THEME="$@" && source $ZSH/oh-my-zsh.sh }'" >> ~/.zshrc
+```
+
+Usage:
+```bash
+ztheme robbyrussell
+```
+
 ## To automatically access your Zsh shell whenever you SSH into the server
 
 Add the following lines at the end of the file `~/.bashrc`:
