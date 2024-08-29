@@ -6,7 +6,7 @@ Note: assuming we're installing in a conda environment as we do not have permiss
 
 Install zsh:
 ```bash
-conda install conda-forge::zsh
+conda install conda-forge::zsh -y
 ```
 
 Install oh-my-zsh
