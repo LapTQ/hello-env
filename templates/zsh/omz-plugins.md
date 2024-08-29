@@ -30,3 +30,4 @@ git clone https://github.com/zsh-users/zsh-history-substring-search.git ${ZSH_CU
 
 Then, add `zsh-history-substring-search` to the plugins in the `~/.zshrc`.
 
+## `tmux`
