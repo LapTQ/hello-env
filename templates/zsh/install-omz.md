@@ -4,9 +4,13 @@
 
 Note: assuming we're installing in a conda environment as we do not have permission to install packages in the host enviroment.
 
-Install zsh:
+Install zsh via conda:
 ```bash
 conda install conda-forge::zsh -y
+```
+or via apt:
+```bash
+sudo apt install zsh -y
 ```
 
 Install oh-my-zsh
