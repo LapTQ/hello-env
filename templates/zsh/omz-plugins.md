@@ -33,3 +33,5 @@ Then, add `zsh-history-substring-search` to the plugins in the `~/.zshrc`.
 ## `tmux`
 
 ## `virtualenv`
+
+## `conda-env`
