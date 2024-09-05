@@ -5,6 +5,8 @@ ARG USER_NAME
 ARG GROUP_ID
 ARG GROUP_NAME
 
+RUN apt update
+
 RUN echo $USER_ID
 RUN apt install -y sudo
 RUN addgroup --gid $GROUP_ID $GROUP_NAME
