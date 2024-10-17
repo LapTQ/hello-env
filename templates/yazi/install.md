@@ -9,3 +9,8 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 git clone https://github.com/sxyazi/yazi.git && cd yazi && cargo build --release --locked
 ./target/release/yazi
 ```
+
+Add the following line to `~/.bashrc` or `~/.zshrc`:
+```bash
+export PATH="$PATH:~/yazi/target/release"
+```
