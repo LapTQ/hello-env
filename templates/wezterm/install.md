@@ -12,9 +12,11 @@ sudo apt install wezterm
 Create a file named `.wezterm.lua` in your home directory with the following content:
 ```bash
 local wezterm = require 'wezterm'
-local config = {}
 
-config.color_scheme = 'Aci (Gogh)'
+local config = {
+    window_decorations = "RESIZE",
+    color_scheme = 'Aci (Gogh)'
+}
 
 return config
 ```
