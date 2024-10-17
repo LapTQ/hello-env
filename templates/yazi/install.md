@@ -15,3 +15,16 @@ Add the following line to `~/.bashrc` or `~/.zshrc`:
 export PATH="$PATH:/path/to/yazi/target/release"
 alias yy=yazi
 ```
+
+To cd to the working dir when exiting Yazi:
+```bash
+function y() {
+        local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+        yazi "$@" --cwd-file="$tmp"
+        if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+                builtin cd -- "$cwd"
+        fi
+        rm -f -- "$tmp"
+}
+```
+Given this, press `y` to start, press `q` to quit.
