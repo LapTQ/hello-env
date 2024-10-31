@@ -1,0 +1,9 @@
+# ~/.config/yazi/yazi.toml
+
+[manager]
+ratio          = [ 1, 2, 5 ]
+sort_by        = "natural"
+
+[preview]
+max_width       = 1920
+max_height      = 1080
