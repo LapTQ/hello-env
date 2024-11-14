@@ -9,16 +9,11 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 git clone https://github.com/sxyazi/yazi.git
 ```
 
-Re-open terminal, then:
+Re-open terminal (choose either `~/.bashrc` or `~/.zshrc`):
 ```bash
 cd yazi && cargo build --release --locked
-./target/release/yazi
-```
-
-Add the following line to `~/.bashrc` or `~/.zshrc`:
-```bash
-export PATH="$PATH:/path/to/yazi/target/release"
-alias yy=yazi
+echo "export PATH=\"$PATH:$(pwd)/target/release\"" >> ~/.zshrc
+echo "alias yy=yazi" >> ~/.zshrc
 ```
 
 To cd to the working dir when exiting Yazi:
