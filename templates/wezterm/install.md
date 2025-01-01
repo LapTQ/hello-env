@@ -24,10 +24,7 @@ local config = {
     enable_scroll_bar = true;
 
     -- color_scheme = 'Clone Of Ubuntu (Gogh)',
-    -- color_scheme = 'Cobalt Neon (Gogh)',
-    color_scheme = 'Cobalt2',
-    -- color_scheme = 'Aci (Gogh)',
-    -- color_scheme = 'AdventureTime',
+    color_scheme = 'shades-of-purple',
 
     font = wezterm.font('JetBrains Mono', {weight = 'Regular'}),
     font_size = 10.0,
