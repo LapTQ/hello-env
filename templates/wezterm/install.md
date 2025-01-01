@@ -6,3 +6,5 @@ echo 'deb [signed-by=/etc/apt/keyrings/wezterm-fury.gpg] https://apt.fury.io/wez
 sudo apt update
 sudo apt install wezterm
 ```
+
+Command palette: `CTRL-SHIFT-P`
