@@ -1,0 +1,5 @@
+# ~/.config/yazi/theme.toml
+
+[flavor]
+# ya pack -a yazi-rs/flavors:catppuccin-mocha
+dark = "catppuccin-mocha"
