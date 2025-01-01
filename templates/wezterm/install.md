@@ -10,12 +10,27 @@ sudo apt install wezterm
 ## Change color theme
 
 Create a file named `.wezterm.lua` in your home directory with the following content:
-```bash
+```lua
 local wezterm = require 'wezterm'
 
 local config = {
-    window_decorations = "RESIZE",
-    color_scheme = 'Aci (Gogh)'
+    -- window_decorations = "RESIZE",
+    window_decorations = "INTEGRATED_BUTTONS|RESIZE",
+    integrated_title_buttons = {
+    --    'Hide',
+        'Maximize',
+        'Close'
+    },
+    enable_scroll_bar = true;
+
+    -- color_scheme = 'Clone Of Ubuntu (Gogh)',
+    -- color_scheme = 'Cobalt Neon (Gogh)',
+    color_scheme = 'Cobalt2',
+    -- color_scheme = 'Aci (Gogh)',
+    -- color_scheme = 'AdventureTime',
+
+    font = wezterm.font('JetBrains Mono', {weight = 'Regular'}),
+    font_size = 10.0,
 }
 
 return config
