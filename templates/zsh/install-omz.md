@@ -2,7 +2,7 @@
 
 ## Requirements
 
-1. `zsh` (install [here](./install-zsh.md)
+1. `zsh` (install [here](./install-zsh.md))
 
 ## Install
 
