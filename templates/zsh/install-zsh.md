@@ -74,3 +74,4 @@ export LDFLAGS=-L$PATH__DIR__INSTALL__NCURSES/lib
 
 1. https://unix.stackexchange.com/questions/673669/installing-zsh-from-source-file-without-root-user-access
 2. http://emboss.open-bio.org/html/adm/ch01s11.html
+3. https://unix.stackexchange.com/questions/123597/building-zsh-without-admin-priv-no-terminal-handling-library-found
