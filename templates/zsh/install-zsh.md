@@ -1,6 +1,6 @@
 # Install Zsh
 
-## Install from pre-built
+## Install with package manager
 
 Install zsh via conda:
 ```bash
