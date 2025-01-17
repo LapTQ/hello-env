@@ -1,8 +1,10 @@
 # Install Oh My ZSH
 
-## Install
+## Requirements
 
-Note: assuming we're installing in a conda environment as we do not have permission to install packages in the host enviroment.
+1. `zsh` (install [here](./install-zsh.md)
+
+## Install
 
 Access `zsh` then install oh-my-zsh
 ```bash
