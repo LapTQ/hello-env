@@ -1,4 +1,17 @@
-# Install Zsh from source
+# Install Zsh
+
+## Install from pre-built
+
+Install zsh via conda:
+```bash
+conda install conda-forge::zsh -y
+```
+or via apt:
+```bash
+sudo apt install zsh -y
+```
+
+## Install from source
 
 Download:
 ```bash
