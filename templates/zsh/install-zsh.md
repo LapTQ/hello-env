@@ -22,7 +22,7 @@ tar -xvf zsh-5.9.tar.xz
 
 Install:
 ```bash
-PATH__DIR__INSTALL__ZSH=$( realpath ~ )/zsh
+PATH__DIR__INSTALL__ZSH=$( realpath ~ )/zsh  # select a directory to install
 mkdir -p $PATH__DIR__INSTALL__ZSH
 cd ~/zsh-5.9
 ./configure --prefix=$PATH__DIR__INSTALL__ZSH
@@ -58,7 +58,7 @@ tar -xvf ncurses.v6.4.tar.gz
 
 Install:
 ```bash
-PATH__DIR__INSTALL__NCURSES=$( realpath ~ )/ncurses
+PATH__DIR__INSTALL__NCURSES=$( realpath ~ )/ncurses    # select a directory to install
 mkdir -p $PATH__DIR__INSTALL__NCURSES
 cd ~/ncurses-6.4/
 ./configure --prefix=$PATH__DIR__INSTALL__NCURSES --with-shared
