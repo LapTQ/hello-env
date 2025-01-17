@@ -4,15 +4,6 @@
 
 Note: assuming we're installing in a conda environment as we do not have permission to install packages in the host enviroment.
 
-Install zsh via conda:
-```bash
-conda install conda-forge::zsh -y
-```
-or via apt:
-```bash
-sudo apt install zsh -y
-```
-
 Access `zsh` then install oh-my-zsh
 ```bash
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
