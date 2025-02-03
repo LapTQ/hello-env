@@ -29,6 +29,7 @@ cd ~/zsh-5.9
 make
 make install
 echo "export PATH=$PATH__DIR__INSTALL__ZSH/bin:$PATH" >> ~/.bashrc
+echo "zsh" >> ~/.bashrc
 ```
 
 
