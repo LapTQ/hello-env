@@ -1,6 +1,12 @@
 ## Release
 https://github.com/sxyazi/yazi/releases
 
+## Download binary file
+
+```bash
+wget -c https://github.com/sxyazi/yazi/releases/download/v25.2.11/yazi-aarch64-unknown-linux-musl.zip
+```
+
 ## Build from source
 https://yazi-rs.github.io/docs/installation/#build-from-source
 
