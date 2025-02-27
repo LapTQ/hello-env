@@ -15,11 +15,34 @@ services:
     environment:
       DISPLAY: '${DISPLAY}'
       QT_X11_NO_MITSHM: 1
+
+      # audio
+      PULSE_SERVER: unix:${XDG_RUNTIME_DIR}/pulse/native
     
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - '${HOME}/.Xauthority:/root/.Xauthority'
+      
+      # audio
+      - ${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native
+      - ~/.config/pulse/cookie:/root/.config/pulse/cookie
+
+      - /home/laptq/Downloads/s:/s
+
+    devices:
+      # audio
+      - /dev/snd:/dev/snd
+
+    # audio
+    group_add:
+      - "29" # Replace 29 with the actual group ID for 'audio' on your system: `getent group audio | cut -d: -f3`
     
     ipc: host
     shm_size: '2g'
     privileged: true
+
+    working_dir: /s
+
+
+# verify audio:
+# aplay /usr/share/sounds/alsa/Front_Center.wav

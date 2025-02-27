@@ -7,4 +7,7 @@ RUN apt update
 
 RUN apt install x11-apps -y
 
+# audio
+RUN apt install -y alsa pulseaudio
+
 SHELL ["/bin/bash", "-c"]
