@@ -34,6 +34,7 @@ cd $PATHD__SCRIPT
 source zsh/install-zsh.sh
 # ==============================================
 
+
 # ================= install omz =================
 export TO__INSTALL__OMZ=False
 
@@ -43,6 +44,25 @@ export PATH=$PATHD__INSTALL__ZSH/bin:$PATH
 cd $PATHD__SCRIPT
 source zsh/install-omz.sh
 # ==================================================
+
+
+# ================= config omz =================
+export TO__CONFIG__OMZ=True
+export THEME__OMZ=af-magic
+export LIST__PLUGINS=(
+    "zsh-autosuggestions"
+    "zsh-syntax-highlighting"
+    "fast-syntax-highlighting"
+    "zsh-history-substring-search"
+    "zsh-autocomplete"
+    "tmux"
+    "virtualenv"
+    "conda-env"
+)
+
+cd $PATHD__SCRIPT
+source zsh/config-omz.sh
+# ==============================================
 
 
 print_msg INFO "Done"
