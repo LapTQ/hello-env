@@ -66,7 +66,7 @@ source zsh/config-omz.sh
 
 
 # ================= install yazi =================
-export TO__INSTALL__YAZI=True
+export TO__INSTALL__YAZI=False
 export MODE__INSTALL__YAZI=install_from_binary
 export VER__YAZI="25.2.11"
 export ARCH__YAZI=x86_64-unknown-linux-musl
@@ -77,5 +77,15 @@ export PATHD__INSTALL__YAZI=$( realpath ~ )/yazi
 cd $PATHD__SCRIPT
 source yazi/install-yazi.sh
 # ================================================
+
+
+# ================= config yazi =================
+export TO__CONFIG__YAZI=True
+export TO__INSTALL__CATIMG=False
+
+cd $PATHD__SCRIPT
+source yazi/config-yazi.sh
+# ==============================================
+
 
 print_msg INFO "Done"

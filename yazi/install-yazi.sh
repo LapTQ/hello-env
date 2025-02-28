@@ -43,7 +43,7 @@ install_from_binary() {
     wget -O yazi.zip https://github.com/sxyazi/yazi/releases/download/v${VER__YAZI}/yazi-${ARCH__YAZI}.zip
     unzip -q -o yazi.zip -d $PATHD__INSTALL__YAZI
     
-    # echo "export PATH=$PATHD__INSTALL__YAZI/yazi-$ARCH__YAZI/:\$PATH" >> ~/.zshrc
+    echo "export PATH=$PATHD__INSTALL__YAZI/yazi-$ARCH__YAZI/:\$PATH" >> ~/.zshrc
 }
 
 
