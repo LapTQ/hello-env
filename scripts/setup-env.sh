@@ -5,7 +5,7 @@ source scripts/error-handlers.sh
 
 
 # ================= install ncurses =================
-export TO__INSTALL__NCURSES=False
+export TO__INSTALL__NCURSES=True
 export MODE__INSTALL__NCURSES=install_from_source
 export VER__NCURSES=6.4
 export PATHD__DOWNLOADS__NCURSES=$( realpath ~ )/lib-downloaded
@@ -17,7 +17,7 @@ source zsh/install-ncurses.sh
 
 
 # ================= install zsh =================
-export TO__INSTALL__ZSH=False
+export TO__INSTALL__ZSH=True
 export MODE__INSTALL__ZSH=install_from_source
 export VER__ZSH=5.9
 export PATHD__DOWNLOADS__ZSH=$( realpath ~ )/lib-downloaded
@@ -36,7 +36,7 @@ source zsh/install-zsh.sh
 
 
 # ================= install omz =================
-export TO__INSTALL__OMZ=False
+export TO__INSTALL__OMZ=True
 
 # set zsh environment variables before installing oh-my-zsh
 export PATH=$PATHD__INSTALL__ZSH/bin:$PATH
@@ -47,7 +47,7 @@ source zsh/install-omz.sh
 
 
 # ================= config omz =================
-export TO__CONFIG__OMZ=False
+export TO__CONFIG__OMZ=True
 export THEME__OMZ=af-magic
 export LIST__PLUGINS=(
     "zsh-autosuggestions"
@@ -66,7 +66,7 @@ source zsh/config-omz.sh
 
 
 # ================= install yazi =================
-export TO__INSTALL__YAZI=False
+export TO__INSTALL__YAZI=True
 export MODE__INSTALL__YAZI=install_from_binary
 export VER__YAZI="25.2.11"
 export ARCH__YAZI=x86_64-unknown-linux-musl
@@ -81,7 +81,7 @@ source yazi/install-yazi.sh
 
 # ================= config yazi =================
 export TO__CONFIG__YAZI=True
-export TO__INSTALL__CATIMG=False
+export TO__INSTALL__CATIMG=True
 
 cd $PATHD__SCRIPT
 source yazi/config-yazi.sh
