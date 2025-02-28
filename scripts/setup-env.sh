@@ -47,7 +47,7 @@ source zsh/install-omz.sh
 
 
 # ================= config omz =================
-export TO__CONFIG__OMZ=True
+export TO__CONFIG__OMZ=False
 export THEME__OMZ=af-magic
 export LIST__PLUGINS=(
     "zsh-autosuggestions"
@@ -64,5 +64,18 @@ cd $PATHD__SCRIPT
 source zsh/config-omz.sh
 # ==============================================
 
+
+# ================= install yazi =================
+export TO__INSTALL__YAZI=True
+export MODE__INSTALL__YAZI=install_from_binary
+export VER__YAZI="25.2.11"
+export ARCH__YAZI=x86_64-unknown-linux-musl
+# export ARCH__YAZI=aarch64-unknown-linux-musl
+export PATHD__DOWNLOADS__YAZI=$( realpath ~ )/lib-downloaded
+export PATHD__INSTALL__YAZI=$( realpath ~ )/yazi
+
+cd $PATHD__SCRIPT
+source yazi/install-yazi.sh
+# ================================================
 
 print_msg INFO "Done"
