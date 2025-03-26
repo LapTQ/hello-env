@@ -1,13 +1,15 @@
-venv_parent=~/prj-name
-venv_name=.env-name
-venv_path=$venv_parent/$venv_name
-[[ ! -d $venv_path ]] && python3 -m venv $venv_path
-source $venv_path/bin/activate
+DIR_PRJ=/path/to/prj/dir
+VENV_PARENT=/path/to/venv/parent
+
+VENV_NAME=.venv
+VENV_PATH=$VENV_PARENT/$VENV_NAME
+[[ ! -d $VENV_PATH ]] && python3 -m venv $VENV_PATH
+
+if [ "$VENV_PARENT" != "$DIR_PRJ" ]; then
+    ln -sf $VENV_PATH $DIR_PRJ/
+fi
+
+source $DIR_PRJ/$VENV_NAME/bin/activate
 which python3
 
-pip_cache_dir=/path/to/.cache/pip
-tmp_dir=/path/to/tmp
-[[ ! -d $tmp_dir ]] && mkdir -p $tmp_dir
-export TMPDIR=$tmp_dir
-[[ ! -d $pip_cache_dir ]] && mkdir -p $pip_cache_dir
-pip install --cache-dir=$pip_cache_dir -r --ignore-installed requirements.txt --default-timeout=10000
+pip install requirements.txt --default-timeout=10000
