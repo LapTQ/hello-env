@@ -5,7 +5,7 @@ VENV_NAME=.venv
 VENV_PATH=$VENV_PARENT/$VENV_NAME
 [[ ! -d $VENV_PATH ]] && python3 -m venv $VENV_PATH
 
-if [ "$VENV_PARENT" != "$DIR_PRJ" ]; then
+if [ $( realpath "$VENV_PARENT" ) != $( realpath "$DIR_PRJ" ) ]; then
     ln -sf $VENV_PATH $DIR_PRJ/
 fi
 
