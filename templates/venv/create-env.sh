@@ -1,6 +1,8 @@
 DIR_PRJ=/path/to/prj/dir
 VENV_PARENT=/path/to/venv/parent
 
+mkdir -p $VENV_PARENT
+
 VENV_NAME=.venv
 VENV_PATH=$VENV_PARENT/$VENV_NAME
 [[ ! -d $VENV_PATH ]] && python3 -m venv $VENV_PATH
