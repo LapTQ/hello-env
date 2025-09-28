@@ -48,6 +48,7 @@ SELECT * FROM Products;
 GO
 ```
 
+Inside container, run:
 ```bash
 /opt/mssql-tools18/bin/sqlcmd -S localhost -U SA -P 'sqlserverttYK251020*' -C  -i /dev/stdin < example-sql.sql
 ```
