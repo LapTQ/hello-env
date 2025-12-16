@@ -41,6 +41,7 @@ install_from_binary() {
     mkdir -p $PATHD__DOWNLOADS__YAZI
     cd $PATHD__DOWNLOADS__YAZI
     wget -O yazi.zip https://github.com/sxyazi/yazi/releases/download/v${VER__YAZI}/yazi-${ARCH__YAZI}.zip
+    mkdir -p $PATHD__INSTALL__YAZI
     unzip -q -o yazi.zip -d $PATHD__INSTALL__YAZI
     
     echo "export PATH=$PATHD__INSTALL__YAZI/yazi-$ARCH__YAZI/:\$PATH" >> ~/.zshrc

@@ -6,6 +6,7 @@ mkdir -p $VENV_PARENT
 VENV_NAME=.venv
 VENV_PATH=$VENV_PARENT/$VENV_NAME
 [[ ! -d $VENV_PATH ]] && python3 -m venv $VENV_PATH
+# try  --without-pip if create venv error: apt install python3.x-venv
 
 if [ $( realpath "$VENV_PARENT" ) != $( realpath "$DIR_PRJ" ) ]; then
     ln -sf $VENV_PATH $DIR_PRJ/
