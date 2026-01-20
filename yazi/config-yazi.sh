@@ -25,7 +25,7 @@ mkdir -p $PATHD__CONFIG_YAZI
 
 # ================== config theme ==================
 {
-    ya pack -a yazi-rs/flavors:catppuccin-mocha
+    ya pkg add yazi-rs/flavors:catppuccin-mocha
 } || {
     # do nothing
     echo ""

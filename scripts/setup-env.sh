@@ -68,7 +68,7 @@ source zsh/config-omz.sh
 # ================= install yazi =================
 export TO__INSTALL__YAZI=True
 export MODE__INSTALL__YAZI=install_from_binary
-export VER__YAZI="25.2.11"
+export VER__YAZI="26.1.4"
 export ARCH__YAZI=x86_64-unknown-linux-musl
 # export ARCH__YAZI=aarch64-unknown-linux-musl
 export PATHD__DOWNLOADS__YAZI=$( realpath ~ )/lib-downloaded

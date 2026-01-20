@@ -8,7 +8,7 @@ if [ -z "$MODE__INSTALL__YAZI" ]; then
 fi
 
 if [ -z "$VER__YAZI" ]; then
-    VER__YAZI="25.2.26"
+    VER__YAZI="26.1.4"
 fi
 
 if [ -z "$ARCH__YAZI" ]; then
