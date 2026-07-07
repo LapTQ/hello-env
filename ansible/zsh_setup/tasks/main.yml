@@ -1,0 +1,14 @@
+---
+- name: Cài đặt ZSH qua APT
+  include_tasks: zsh_setup/tasks/install_via_apt.yml
+  when: install_mode == 'apt'
+
+- name: Cài đặt ZSH từ Source
+  include_tasks: zsh_setup/tasks/source_zsh.yml
+  when: install_mode == 'source'
+  
+- name: Thiết lập ZSH làm shell mặc định thông qua exec trong ~/.bashrc
+  lineinfile:
+    path: ~/.bashrc
+    line: 'exec zsh'
+    insertafter: EOF

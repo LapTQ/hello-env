@@ -1,0 +1,30 @@
+---
+- name: Cài đặt và cấu hình Git cá nhân
+  hosts: localhost
+  connection: local
+
+  tasks:
+    # --- 1. CÀI ĐẶT GIT ---
+    # Chạy với quyền root (sudo) để cài đặt package
+    - name: Cài đặt gói Git
+      become: true
+      apt:
+        name: git
+        state: latest
+        update_cache: yes
+
+    # --- 2. CẤU HÌNH GIT ---
+    # Chạy với quyền user thường để ghi vào ~/.gitconfig của chính user đó
+    - name: Cấu hình Git user.name
+      become: false
+      git_config:
+        name: user.name
+        scope: global
+        value: "LapTQ"
+
+    - name: Cấu hình Git user.email
+      become: false
+      git_config:
+        name: user.email
+        scope: global
+        value: "lap.tq4@gmail.com"

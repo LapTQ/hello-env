@@ -1,0 +1,19 @@
+---
+- name: Cài đặt ZSH linh hoạt (Apt hoặc Source)
+  hosts: localhost
+  connection: local
+
+  vars:
+    # Mặc định là apt, nhưng anh có thể ghi đè lúc chạy lệnh
+    install_mode: "source"  # apt source 
+    
+    # Phiên bản
+    ver_ncurses: "6.4"
+    ver_zsh: "5.9"
+    
+    # Vị trí chuẩn (Best Practice)
+    local_prefix: "{{ ansible_env.HOME }}/.local"
+    build_dir: "/tmp/ansible_build"
+
+  tasks:
+    - include_tasks: tasks/main.yml

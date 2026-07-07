@@ -1,0 +1,13 @@
+---
+- name: Cài đặt ZSH bằng apt
+  become: true # Bật sudo
+  apt:
+    name: zsh
+    state: present
+    update_cache: yes
+
+- name: Lấy đường dẫn chính xác của ZSH
+  command: which zsh
+  register: zsh_path
+  changed_when: false # Lệnh này chỉ để đọc thông tin, không làm thay đổi hệ thống
+

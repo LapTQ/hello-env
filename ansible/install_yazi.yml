@@ -1,0 +1,156 @@
+---
+- name: Cài đặt và cấu hình Yazi (Terminal File Manager)
+  hosts: localhost
+  connection: local
+
+  vars:
+    # Anh có thể đổi version tại đây. (Lưu ý: 26.1.4 có thể là typo của 0.2.4 hoặc bản custom, anh check lại tag trên Github nhé)
+    ver_yazi: "26.5.6"
+    arch_yazi: "x86_64-unknown-linux-musl"
+    install_catimg: true
+    
+    # Quy hoạch đường dẫn chuẩn
+    local_bin: "{{ ansible_env.HOME }}/.local/bin"
+    config_dir: "{{ ansible_env.HOME }}/.config/yazi"
+    tmp_dir: "/tmp/yazi_install"
+
+  tasks:
+    # ================= 1. CHUẨN BỊ MÔI TRƯỜNG =================
+    - name: Đảm bảo các thư mục chuẩn Best Practice tồn tại
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ local_bin }}"
+        - "{{ config_dir }}"
+        - "{{ tmp_dir }}"
+
+    # ================= 2. KIỂM TRA VÀ CÀI ĐẶT BINARY =================
+    - name: Kiểm tra xem Yazi đã được cài đặt chưa
+      stat:
+        path: "{{ local_bin }}/yazi"
+      register: yazi_check
+
+    - name: Thực hiện tải và cài đặt (Chỉ chạy khi chưa có Yazi)
+      when: not yazi_check.stat.exists
+      block:
+        - name: Tải file nén Yazi từ Github (Kèm cơ chế tự động thử lại do mạng lag)
+          get_url:
+            url: "https://github.com/sxyazi/yazi/releases/download/v{{ ver_yazi }}/yazi-{{ arch_yazi }}.zip"
+            dest: "{{ tmp_dir }}/yazi.zip"
+            timeout: 120
+          register: download_yazi
+          until: download_yazi is success
+          retries: 5
+          delay: 5
+
+        - name: Giải nén Yazi vào thư mục tạm
+          unarchive:
+            src: "{{ tmp_dir }}/yazi.zip"
+            dest: "{{ tmp_dir }}"
+            remote_src: yes
+
+        - name: Chép các file thực thi (yazi, ya) vào ~/.local/bin
+          copy:
+            src: "{{ tmp_dir }}/yazi-{{ arch_yazi }}/{{ item }}"
+            dest: "{{ local_bin }}/{{ item }}"
+            mode: '0755'
+            remote_src: yes
+          loop:
+            - yazi
+            - ya
+
+        - name: Dọn dẹp sạch sẽ file tải về và thư mục tạm
+          file:
+            path: "{{ tmp_dir }}"
+            state: absent
+
+    # ================= 3. CẤU HÌNH ZSH WRAPPER =================
+    - name: Thêm hàm wrapper y() vào ~/.zshrc
+      blockinfile:
+        path: "{{ ansible_env.HOME }}/.zshrc"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - YAZI WRAPPER"
+        block: |
+          function y() {
+              local tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+              yazi "$@" --cwd-file="$tmp"
+              if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+                  builtin cd -- "$cwd"
+              fi
+              rm -f -- "$tmp"
+          }
+
+    # ================= 4. CẤU HÌNH YAZI THEME & TOML =================
+    - name: Ghi file cấu hình theme.toml
+      copy:
+        dest: "{{ config_dir }}/theme.toml"
+        content: |
+          [flavor]
+          dark = "catppuccin-mocha"
+
+    - name: Ghi file cấu hình yazi.toml
+      copy:
+        dest: "{{ config_dir }}/yazi.toml"
+        content: |
+          [manager]
+          ratio          = [ 1, 2, 5 ]
+          sort_by        = "natural"
+
+          [preview]
+          max_width      = 1920
+          max_height     = 1080
+
+    - name: Tải và cài đặt theme catppuccin-mocha qua công cụ 'ya'
+      command: "{{ local_bin }}/ya pkg add yazi-rs/flavors:catppuccin-mocha"
+      register: ya_pack
+      failed_when: false # Bỏ qua báo lỗi nếu theme đã được cài từ trước
+      changed_when: "'Cloned' in ya_pack.stdout or 'Installed' in ya_pack.stdout"
+
+    # ================= 5. KIỂM TRA VÀ CÀI ĐẶT CATIMG TỪ SOURCE =================
+    - name: Kiểm tra xem catimg đã được cài đặt chưa
+      stat:
+        path: "{{ ansible_env.HOME }}/.local/bin/catimg"
+      register: catimg_check
+      when: install_catimg # Chỉ kiểm tra nếu ông bật cờ muốn cài catimg
+
+    - name: Thực hiện build và cài đặt catimg (Chỉ chạy khi chưa có)
+      when: install_catimg and not catimg_check.stat.exists
+      block:
+        - name: Tạo sẵn thư mục cố định để chứa code catimg
+          file:
+            path: "{{ tmp_dir }}/catimg_src"
+            state: directory
+
+        - name: Tải mã nguồn catimg (Kèm cơ chế chống lag mạng)
+          get_url:
+            url: "https://github.com/posva/catimg/archive/refs/heads/master.tar.gz"
+            dest: "{{ tmp_dir }}/catimg.tar.gz"
+            timeout: 120
+          register: download_catimg
+          until: download_catimg is success
+          retries: 3
+          delay: 5
+
+        - name: Giải nén lột vỏ (Bỏ qua thư mục gốc của Github)
+          unarchive:
+            src: "{{ tmp_dir }}/catimg.tar.gz"
+            dest: "{{ tmp_dir }}/catimg_src"
+            remote_src: yes
+            extra_opts:
+              - --strip-components=1
+
+        - name: Build và Install catimg vào môi trường Local
+          shell: |
+            set -e
+            mkdir -p build && cd build
+            cmake -DCMAKE_INSTALL_PREFIX={{ ansible_env.HOME }}/.local ..
+            make -j$(nproc)
+            make install
+          args:
+            chdir: "{{ tmp_dir }}/catimg_src"
+
+        - name: Dọn dẹp sạch sẽ toàn bộ thư mục tạm sau khi xong việc
+          file:
+            path: "{{ tmp_dir }}"
+            state: absent

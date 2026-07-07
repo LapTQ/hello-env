@@ -1,0 +1,98 @@
+---
+- name: Cài đặt và cấu hình Oh-My-Zsh (OMZ) làm trọng tâm
+  hosts: localhost
+  connection: local
+
+  vars:
+    omz_theme: "af-magic"
+    omz_custom_dir: "{{ ansible_env.HOME }}/.oh-my-zsh/custom"
+    
+    # Danh sách plugin ghi vào .zshrc (cách nhau bởi dấu cách)
+    omz_plugins_list: "zsh-autosuggestions zsh-syntax-highlighting fast-syntax-highlighting zsh-history-substring-search zsh-autocomplete tmux virtualenv conda-env"
+    
+    # Khai báo các plugin cần tải từ Git
+    custom_plugins:
+      - name: zsh-autosuggestions
+        repo: "https://github.com/zsh-users/zsh-autosuggestions.git"
+      - name: zsh-syntax-highlighting
+        repo: "https://github.com/zsh-users/zsh-syntax-highlighting.git"
+      - name: fast-syntax-highlighting
+        repo: "https://github.com/zdharma-continuum/fast-syntax-highlighting.git"
+      - name: zsh-history-substring-search
+        repo: "https://github.com/zsh-users/zsh-history-substring-search.git"
+      - name: zsh-autocomplete
+        repo: "https://github.com/marlonrichert/zsh-autocomplete.git"
+
+  tasks:
+    # ================= 1. XỬ LÝ DEPENDENCY (ZSH) =================
+    - name: Kiểm tra ZSH đã có trên máy chưa
+      shell: "PATH=$HOME/.local/bin:$PATH command -v zsh"
+      register: zsh_check
+      failed_when: false
+      changed_when: false
+
+    - name: Kích hoạt quy trình cài ZSH nếu chưa tìm thấy
+      include_tasks: zsh_setup/tasks/main.yml
+      vars:
+        install_mode: "apt" # Anh có thể linh hoạt đổi thành "source" nếu chạy trên server
+        ver_ncurses: "6.4"
+        ver_zsh: "5.9"
+        local_prefix: "{{ ansible_env.HOME }}/.local"
+        build_dir: "/tmp/ansible_build"
+      when: zsh_check.rc != 0
+
+    # ================= 2. CÀI ĐẶT OMZ =================
+    - name: Kiểm tra xem OMZ đã được cài chưa
+      stat:
+        path: "{{ ansible_env.HOME }}/.oh-my-zsh"
+      register: omz_dir
+
+    - name: Tải script cài đặt Oh-My-Zsh
+      get_url:
+        url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+        dest: /tmp/install_omz.sh
+        mode: '0755'
+      when: not omz_dir.stat.exists
+
+    - name: Chạy script cài đặt OMZ
+      command: sh /tmp/install_omz.sh --unattended
+      when: not omz_dir.stat.exists
+      environment:
+        # Giữ nguyên shell hiện hành lúc cài để không bắt nhập pass sudo (chsh)
+        KEEP_ZSH: "yes" 
+        RUNZSH: "no"
+        PATH: "{{ ansible_env.HOME }}/.local/bin:{{ ansible_env.PATH }}"
+
+    # ================= 3. CẤU HÌNH PLUGINS =================
+    - name: Clone các custom plugins từ Github
+      git:
+        repo: "{{ item.repo }}"
+        dest: "{{ omz_custom_dir }}/plugins/{{ item.name }}"
+        depth: 1      # Chỉ lấy commit mới nhất cho lẹ (giống tham số --depth 1)
+        update: yes   # Nếu có thư mục rồi thì tự pull code mới về
+      loop: "{{ custom_plugins }}"
+
+    # ================= 4. CẤU HÌNH .ZSHRC =================
+    - name: Đổi Theme trong file .zshrc
+      lineinfile:
+        path: "{{ ansible_env.HOME }}/.zshrc"
+        regexp: '^ZSH_THEME='
+        line: 'ZSH_THEME="{{ omz_theme }}"'
+
+    - name: Cập nhật danh sách Plugins
+      lineinfile:
+        path: "{{ ansible_env.HOME }}/.zshrc"
+        regexp: '^plugins='
+        line: 'plugins=({{ omz_plugins_list }})'
+
+    - name: Thêm đường dẫn cài đặt local vào PATH trong .zshrc
+      lineinfile:
+        path: "{{ ansible_env.HOME }}/.zshrc"
+        line: 'export PATH="$HOME/.local/bin:$PATH"'
+        insertafter: EOF
+
+    - name: Thêm thư viện local vào LD_LIBRARY_PATH trong .zshrc
+      lineinfile:
+        path: "{{ ansible_env.HOME }}/.zshrc"
+        line: 'export LD_LIBRARY_PATH="$HOME/.local/lib:$LD_LIBRARY_PATH"'
+        insertafter: EOF

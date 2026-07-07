@@ -1,0 +1,30 @@
+---
+- name: Đảm bảo thư mục build tồn tại
+  file:
+    path: "{{ build_dir }}"
+    state: directory
+
+- name: Tải file ncurses (Tăng timeout và tự động thử lại nếu mạng lag)
+  get_url:
+    url: "https://github.com/mirror/ncurses/archive/refs/tags/v{{ ver_ncurses }}.tar.gz"
+    dest: "{{ build_dir }}/ncurses-{{ ver_ncurses }}.tar.gz"
+    timeout: 120 # Đợi tối đa 120 giây thay vì mặc định
+  register: download_ncurses
+  until: download_ncurses is success
+  retries: 3   # Nếu lỗi mạng, tự động thử tải lại 3 lần
+  delay: 5     # Cách nhau 5 giây giữa các lần thử
+
+- name: Giải nén file ncurses đã tải
+  unarchive:
+    src: "{{ build_dir }}/ncurses-{{ ver_ncurses }}.tar.gz"
+    dest: "{{ build_dir }}"
+    remote_src: yes # Báo cho Ansible biết file nén đã nằm sẵn ở máy hiện tại rồi
+
+- name: Build và Install ncurses
+  shell: |
+    set -e
+    ./configure --prefix={{ local_prefix }} --with-shared
+    make -j$(nproc) # Dùng nproc để build đa luồng cho nhanh
+    make install
+  args:
+    chdir: "{{ build_dir }}/ncurses-{{ ver_ncurses }}"

@@ -1,0 +1,19 @@
+---
+- name: Tự động cài đặt các công cụ hệ thống cơ bản
+  hosts: localhost
+  connection: local
+
+  tasks:
+    - name: Cập nhật apt cache và cài đặt các phần mềm hệ thống
+      become: true # Bắt buộc phải dùng sudo để cài gói hệ thống
+      apt:
+        name:
+          - wget
+          - build-essential
+          - curl
+          - git
+          - tmux
+          - zip
+          - cmake
+        state: present    # nếu chưa có, thì cài. Nếu có rồi, thì lướt qua
+        update_cache: yes # Tương đương với lệnh 'apt update' trước khi cài

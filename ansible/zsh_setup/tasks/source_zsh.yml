@@ -1,0 +1,61 @@
+---
+- name: Đảm bảo cấu trúc thư mục ~/.local tồn tại
+  file:
+    path: "{{ local_prefix }}/{{ item }}"
+    state: directory
+  loop:
+    - bin
+    - lib
+    - include
+
+# --- KIỂM TRA NCURSES ---
+- name: Kiểm tra xem ncurses đã được cài trong ~/.local chưa
+  stat:
+    path: "{{ local_prefix }}/lib/libncurses.so"
+  register: ncurses_check
+
+- name: Gọi tiến trình cài ncurses nếu chưa có
+  include_tasks: tasks/source_ncurses.yml
+  when: not ncurses_check.stat.exists
+
+# --- CÀI ĐẶT ZSH ---
+- name: Tải và giải nén ZSH
+  unarchive:
+    src: "https://zenlayer.dl.sourceforge.net/project/zsh/zsh/{{ ver_zsh }}/zsh-{{ ver_zsh }}.tar.xz"
+    dest: "{{ build_dir }}"
+    remote_src: yes
+
+- name: Build và Install ZSH từ Source
+  shell: |
+    ./configure --prefix={{ local_prefix }}
+    make -j$(nproc)
+    make install
+  args:
+    chdir: "{{ build_dir }}/zsh-{{ ver_zsh }}"
+  # Tiêm biến môi trường cục bộ để ZSH tìm thấy ncurses
+  environment:
+    CPPFLAGS: "-I{{ local_prefix }}/include"
+    LDFLAGS: "-L{{ local_prefix }}/lib"
+    LD_LIBRARY_PATH: "{{ local_prefix }}/lib:{{ ansible_env.LD_LIBRARY_PATH | default('') }}"
+
+    # Ép GCC 14 bỏ qua lỗi kiểm tra kiểu dữ liệu của mã nguồn cũ
+    CFLAGS: "-DHAVE_BOOLCODES -Wno-error=incompatible-pointer-types -Wno-error=implicit-function-declaration -Wno-error=int-conversion"
+
+# --- DỌN DẸP & CẤU HÌNH ---
+- name: Xóa thư mục build tạm để dọn rác
+  file:
+    path: "{{ build_dir }}"
+    state: absent
+
+- name: Thêm ~/.local/bin vào PATH trong ~/.bashrc
+  lineinfile:
+    path: ~/.bashrc
+    line: 'export PATH="$HOME/.local/bin:$PATH"'
+    insertafter: EOF
+
+- name: Thêm ~/.local/lib vào LD_LIBRARY_PATH trong ~/.bashrc
+  lineinfile:
+    path: ~/.bashrc
+    line: 'export LD_LIBRARY_PATH="$HOME/.local/lib:$LD_LIBRARY_PATH"'
+    insertafter: EOF
+
