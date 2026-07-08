@@ -1,0 +1,80 @@
+---
+- name: Cài đặt và cấu hình font JetBrains Mono cho hệ thống
+  hosts: localhost
+  connection: local
+
+  vars:
+    # Bản 2.304 là bản stable chuẩn mực và đầy đủ nhất hiện tại
+    font_url: "https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip"
+    font_dir: "{{ ansible_env.HOME }}/.local/share/fonts/JetBrainsMono"
+    tmp_dir: "/tmp/jetbrains_mono"
+
+  tasks:
+    # ================= 1. KIỂM TRA =================
+    - name: Kiểm tra xem JetBrains Mono đã cài chưa
+      stat:
+        path: "{{ font_dir }}/JetBrainsMono-Regular.ttf"
+      register: font_check
+
+    # ================= 2. TẢI VÀ CÀI ĐẶT =================
+    - name: Tải, giải nén và cài đặt Font (Chỉ chạy khi chưa có)
+      when: not font_check.stat.exists
+      block:
+        - name: Đảm bảo thư mục đích và thư mục tạm tồn tại
+          file:
+            path: "{{ item }}"
+            state: directory
+            mode: '0755'
+          loop:
+            - "{{ font_dir }}"
+            - "{{ tmp_dir }}"
+
+        - name: Tải file nén chứa Font (Kèm cơ chế chống lag mạng)
+          get_url:
+            url: "{{ font_url }}"
+            dest: "{{ tmp_dir }}/JetBrainsMono.zip"
+            timeout: 120
+          register: download_font
+          until: download_font is success
+          retries: 3
+          delay: 5
+
+        - name: Giải nén file Zip thẳng vào thư mục tạm
+          unarchive:
+            src: "{{ tmp_dir }}/JetBrainsMono.zip"
+            dest: "{{ tmp_dir }}"
+            remote_src: yes
+
+        - name: Chép toàn bộ định dạng TTF xịn nhất vào ~/.local/share/fonts
+          shell: |
+            cp {{ tmp_dir }}/fonts/ttf/*.ttf {{ font_dir }}/
+          
+        - name: Cập nhật lại bộ nhớ đệm (Cache) Font của Linux
+          command: fc-cache -f -v ~/.local/share/fonts
+
+        - name: Dọn dẹp sạch sẽ thư mục tạm
+          file:
+            path: "{{ tmp_dir }}"
+            state: absent
+
+    # ================= 3. CẤU HÌNH CHO UBUNTU TEXT EDITOR & TERMINAL =================
+    - name: Ép các ứng dụng mặc định của Ubuntu dùng JetBrains Mono
+      shell: |
+        # Hack DBus để Ansible gọi được giao diện cấu hình GNOME của User
+        export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus"
+        export DISPLAY="${DISPLAY:-:0}"
+
+        # 2. CẤU HÌNH CHO GEDIT (Text Editor cũ)
+        if gsettings list-schemas | grep -q "org.gnome.gedit.preferences.editor"; then
+            gsettings set org.gnome.gedit.preferences.editor use-default-font false
+            gsettings set org.gnome.gedit.preferences.editor editor-font 'JetBrains Mono 11'
+        fi
+
+        # 3. CẤU HÌNH CHO GNOME TEXT EDITOR (Text Editor mới trên Ubuntu 22.04/24.04)
+        if gsettings list-schemas | grep -q "org.gnome.TextEditor"; then
+            gsettings set org.gnome.TextEditor use-system-font false
+            gsettings set org.gnome.TextEditor custom-font 'JetBrains Mono 11'
+        fi
+      args:
+        executable: /bin/bash
+      changed_when: true
