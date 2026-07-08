@@ -16,6 +16,5 @@
           - zip
           - cmake
           - htop
-          - nvtop
         state: present    # nếu chưa có, thì cài. Nếu có rồi, thì lướt qua
         update_cache: yes # Tương đương với lệnh 'apt update' trước khi cài

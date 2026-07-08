@@ -1,0 +1,38 @@
+---
+- name: Cài đặt Visual Studio Code (VSCode)
+  hosts: localhost
+  connection: local
+  become: true # Bật sudo để cài vào hệ thống
+
+  vars:
+    tmp_deb: "/tmp/vscode_amd64.deb"
+
+  tasks:
+    - name: Kiểm tra xem VSCode đã cài chưa
+      command: which code
+      register: vscode_check
+      failed_when: false
+      changed_when: false
+
+    - name: Thực hiện tải và cài đặt VSCode (Chỉ chạy khi chưa có)
+      when: vscode_check.rc != 0
+      block:
+        - name: Tải file .deb của VSCode (Bản Stable mới nhất)
+          get_url:
+            url: "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64"
+            dest: "{{ tmp_deb }}"
+            timeout: 120
+          register: download_vscode
+          until: download_vscode is success
+          retries: 3
+          delay: 5
+
+        - name: Cài đặt VSCode qua hệ thống APT
+          apt:
+            deb: "{{ tmp_deb }}"
+            state: present
+
+        - name: Dọn dẹp sạch sẽ file .deb sau khi cài xong
+          file:
+            path: "{{ tmp_deb }}"
+            state: absent

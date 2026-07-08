@@ -1,0 +1,37 @@
+---
+- name: Cài đặt công cụ nvtop bằng AppImage (Nhanh, gọn, nhẹ)
+  hosts: localhost
+  connection: local
+
+  vars:
+    local_bin: "{{ ansible_env.HOME }}/.local/bin"
+    # Dùng đường dẫn 'latest' để Github tự động trả về phiên bản mới nhất
+    appimage_url: "https://github.com/Syllo/nvtop/releases/download/3.3.2/nvtop-3.3.2-x86_64.AppImage"
+
+  tasks:
+    # ================= 1. KIỂM TRA =================
+    - name: Kiểm tra xem nvtop đã có sẵn chưa
+      stat:
+        path: "{{ local_bin }}/nvtop"
+      register: nvtop_check
+
+    # ================= 2. CÀI ĐẶT BẰNG APPIMAGE =================
+    - name: Thực hiện tải và cài đặt nvtop AppImage
+      when: not nvtop_check.stat.exists
+      block:
+        - name: Đảm bảo thư mục đích (~/.local/bin) tồn tại
+          file:
+            path: "{{ local_bin }}"
+            state: directory
+            mode: '0755'
+
+        - name: Tải thẳng file AppImage và tự động cấp quyền thực thi
+          get_url:
+            url: "{{ appimage_url }}"
+            dest: "{{ local_bin }}/nvtop"
+            mode: '0755' # Điểm chốt hạ: Tự động chạy lệnh chmod +x khi tải xong
+            timeout: 120
+          register: download_nvtop
+          until: download_nvtop is success
+          retries: 3
+          delay: 5

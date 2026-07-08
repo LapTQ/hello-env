@@ -1,0 +1,88 @@
+---
+- name: Cài đặt Google Antigravity IDE từ file nén cục bộ
+  hosts: localhost
+  connection: local
+
+  vars:
+    # Do file có dấu cách nên chúng ta bọc kỹ trong ngoặc kép
+    source_tarball: "{{ ansible_env.HOME }}/Downloads/Antigravity IDE.tar.gz"
+    install_dir: "{{ ansible_env.HOME }}/.local/share/antigravity-ide"
+    desktop_file: "{{ ansible_env.HOME }}/.local/share/applications/antigravity-ide.desktop"
+    app_name: "antigravity-ide.desktop"
+
+  tasks:
+    # ================= 1. KIỂM TRA =================
+    - name: Kiểm tra xem Antigravity IDE đã cài chưa
+      stat:
+        path: "{{ install_dir }}/antigravity-ide"
+      register: antigravity_check
+
+    - name: Kiểm tra file tải về có tồn tại trong Downloads không
+      stat:
+        path: "{{ source_tarball }}"
+      register: tarball_check
+      when: not antigravity_check.stat.exists
+
+    - name: Dừng chạy nếu không tìm thấy file cài đặt
+      fail:
+        msg: "Không tìm thấy file tại {{ source_tarball }}. Anh nhớ tải về trước nhé!"
+      when: not antigravity_check.stat.exists and not tarball_check.stat.exists
+
+    # ================= 2. CÀI ĐẶT & CẤU HÌNH =================
+    - name: Thực hiện giải nén và cấu hình (Chỉ chạy khi chưa cài)
+      when: not antigravity_check.stat.exists and tarball_check.stat.exists
+      block:
+        - name: Tạo thư mục chứa app
+          file:
+            path: "{{ install_dir }}"
+            state: directory
+            mode: '0755'
+
+        - name: Đảm bảo thư mục applications tồn tại (để chứa shortcut)
+          file:
+            path: "{{ ansible_env.HOME }}/.local/share/applications"
+            state: directory
+
+        - name: Giải nén file tar.gz (Lột vỏ thư mục gốc)
+          unarchive:
+            src: "{{ source_tarball }}"
+            dest: "{{ install_dir }}"
+            remote_src: yes
+            extra_opts:
+              - --strip-components=1 # Lột bỏ cái thư mục "Antigravity IDE" bao bên ngoài
+
+        - name: Cấp quyền thực thi cho file chạy chính
+          file:
+            path: "{{ install_dir }}/antigravity-ide"
+            mode: '0755'
+
+        - name: Tạo symlink vào ~/.local/bin để gọi nhanh lệnh từ terminal
+          file:
+            src: "{{ install_dir }}/antigravity-ide"
+            dest: "{{ ansible_env.HOME }}/.local/bin/antigravity-ide"
+            state: link
+
+        - name: Tạo file Shortcut (.desktop) cho GNOME nhận diện ứng dụng
+          copy:
+            dest: "{{ desktop_file }}"
+            content: |
+              [Desktop Entry]
+              Version=1.0
+              Name=Google Antigravity IDE
+              Comment=The next generation IDE
+              # Thêm cờ --no-sandbox để lách lỗi phân quyền của Chromium
+              Exec={{ install_dir }}/antigravity-ide --no-sandbox %U
+              Path={{ install_dir }}
+              # Đổi sang icon mặc định của Linux chắc chắn hiện
+              Icon=accessories-text-editor 
+              Terminal=false
+              Type=Application
+              Categories=Development;IDE;
+              StartupWMClass=antigravity-ide
+            mode: '0755'
+
+        # ================= 3. DỌN DẸP =================
+        - name: Xóa file .tar.gz trong thư mục Downloads sau khi cài xong
+          file:
+            path: "{{ source_tarball }}"
+            state: absent

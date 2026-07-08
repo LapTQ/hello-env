@@ -1,0 +1,35 @@
+---
+- name: Gỡ cài đặt Visual Studio Code (VSCode)
+  hosts: localhost
+  connection: local
+
+  vars:
+    # Đổi thành 'true' nếu anh muốn xóa SẠCH mọi cấu hình (settings.json) và toàn bộ Extensions
+    remove_user_data: false
+
+  tasks:
+    - name: Kiểm tra xem VSCode có đang cài trên máy không
+      command: which code
+      register: vscode_check
+      failed_when: false
+      changed_when: false
+
+    - name: Thực hiện gỡ cài đặt (Chỉ chạy khi máy đang có VSCode)
+      when: vscode_check.rc == 0
+      block:
+        - name: Gỡ bỏ phần mềm VSCode qua APT
+          become: true # Bật sudo để can thiệp vào hệ thống
+          apt:
+            name: code
+            state: absent
+            purge: yes       # Xóa luôn các file cấu hình hệ thống (không bao gồm dữ liệu user)
+            autoremove: yes  # Tự động dọn dẹp các thư viện phụ thuộc không còn dùng đến
+
+        - name: Xóa thư mục cấu hình và thư mục Extensions của User
+          file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - "{{ ansible_env.HOME }}/.config/Code"
+            - "{{ ansible_env.HOME }}/.vscode"
+          when: remove_user_data

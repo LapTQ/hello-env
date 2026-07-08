@@ -1,0 +1,67 @@
+---
+- name: Cài đặt trình duyệt Microsoft Edge và ghim vào Dock
+  hosts: localhost
+  connection: local
+  become: true # Bật sudo cho toàn bộ Playbook (để cài đặt)
+
+  vars:
+    tmp_deb: "/tmp/edge_amd64.deb"
+
+  tasks:
+    # ================= 1. KIỂM TRA =================
+    - name: Kiểm tra xem Edge đã cài chưa
+      command: which microsoft-edge
+      register: edge_check
+      failed_when: false
+      changed_when: false
+
+    # ================= 2. CÀI ĐẶT =================
+    - name: Thực hiện tải và cài đặt Edge (Chỉ chạy khi chưa có)
+      when: edge_check.rc != 0
+      block:
+        - name: Tải file .deb của Microsoft Edge (Bản Stable)
+          get_url:
+            url: "https://go.microsoft.com/fwlink?linkid=2149051&brand=M102"
+            dest: "{{ tmp_deb }}"
+            timeout: 120
+          register: download_edge
+          until: download_edge is success
+          retries: 3
+          delay: 5
+
+        - name: Cài đặt Edge qua hệ thống APT
+          apt:
+            deb: "{{ tmp_deb }}"
+            state: present
+
+        - name: Dọn dẹp sạch sẽ file .deb sau khi cài xong
+          file:
+            path: "{{ tmp_deb }}"
+            state: absent
+
+    # ================= 3. CẤU HÌNH DOCK =================
+    - name: Thêm Edge vào thanh Dock (Favorites) của GNOME
+      become: false # QUAN TRỌNG: Tắt quyền root để sửa cấu hình của User hiện tại
+      shell: |
+        # Định tuyến D-Bus để Ansible gọi được API giao diện GNOME từ terminal ngầm
+        export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus"
+        export DISPLAY="${DISPLAY:-:0}"
+        
+        # Lấy danh sách app đang ghim hiện tại
+        current=$(gsettings get org.gnome.shell favorite-apps)
+        
+        # Nếu chưa có Edge thì tiến hành nối thêm vào mảng
+        if [[ $current != *"'microsoft-edge.desktop'"* ]]; then
+            if [ "$current" = "[]" ] || [ "$current" = "@as []" ]; then
+                new_list="['microsoft-edge.desktop']"
+            else
+                # Cắt dấu ngoặc vuông ở cuối, thêm edge, đóng ngoặc lại
+                new_list="${current%]*}, 'microsoft-edge.desktop']"
+            fi
+            gsettings set org.gnome.shell favorite-apps "$new_list"
+            echo "CHANGED"
+        fi
+      args:
+        executable: /bin/bash
+      register: dock_result
+      changed_when: "'CHANGED' in dock_result.stdout"
