@@ -15,7 +15,7 @@
   register: ncurses_check
 
 - name: Gọi tiến trình cài ncurses nếu chưa có
-  include_tasks: tasks/source_ncurses.yml
+  include_tasks: zsh_setup/tasks/source_ncurses.yml
   when: not ncurses_check.stat.exists
 
 # --- CÀI ĐẶT ZSH ---
