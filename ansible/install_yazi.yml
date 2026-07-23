@@ -93,7 +93,7 @@
       copy:
         dest: "{{ config_dir }}/yazi.toml"
         content: |
-          [manager]
+          [mgr]
           ratio          = [ 1, 2, 5 ]
           sort_by        = "natural"
 
