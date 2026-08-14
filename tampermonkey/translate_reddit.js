@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Reddit Custom Translator (UI Config & Translate Button)
+// @name         Reddit Custom Translator (Auto Retry Errors)
 // @namespace    http://tampermonkey.net/
-// @version      4.1
-// @description  Dịch Reddit theo batch, có UI config chọn engine, model, và nút bấm dịch trực tiếp trên màn hình.
+// @version      4.2
+// @description  Dịch Reddit theo batch, có UI config, tự động dịch lại các đoạn lỗi mạng hoặc chưa load.
 // @match        *://*.reddit.com/*
 // @match        *://sh.reddit.com/*
 // @grant        GM_xmlhttpRequest
@@ -14,7 +14,7 @@
     'use strict';
 
     // ==========================================
-    // 1. TẦNG DOMAIN & INTERFACE (Trừu tượng)
+    // 1. TẦNG DOMAIN & INTERFACE
     // ==========================================
     class ITranslator {
         async translateBatch(texts, previousContext = "") {
@@ -23,7 +23,7 @@
     }
 
     // ==========================================
-    // 2. TẦNG INFRASTRUCTURE (Implementations)
+    // 2. TẦNG INFRASTRUCTURE
     // ==========================================
     class GoogleBatchTranslator extends ITranslator {
         async translateBatch(texts, previousContext = "") {
@@ -81,7 +81,7 @@
         async translateBatch(texts, previousContext = "") {
             if (!texts || texts.length === 0) return { translations: [], summary: "" };
 
-            let systemPrompt = `Dịch nội dung từ bài post/comment trên Reddit sau sang Tiếng Việt. Lưu ý là việc dịch chay word-by-word có thể không được tự nhiên, nên hãy dịch theo văn phong hoặc cách nói của người Việt. Nếu thấy chỗ nào lủng củng, rườm rà, dài dòng với người Việt, thì hãy viết lại sao cho dễ hiểu hơn. Thuật ngữ cứ để tiếng Anh.
+            let systemPrompt = `Dịch nội dung từ bài post/comment trên Reddit sau sang Tiếng Việt. Không dịch chay word-by-word hay sentence-by-sentence, rất không được tự nhiên. Diễn đạt lại cho trôi chảy như tiếng Việt tự nhiên, súc tích hơn, cô đọng hơn, và lược bỏ những từ/câu/ý nào lủng củng, rườm rà, dài dòng với người Việt. Thuật ngữ cứ để tiếng Anh.
 CRITICAL: You must return the output STRICTLY as a valid JSON object. This object MUST contain two keys:
 1. "translations": an array of strings, matching the exact order and size of the input array.
 2. "summary": a short string summarizing the overall context of what you just translated (to be used as context for the next batch).
@@ -147,7 +147,8 @@ Do not include markdown code blocks.`;
             const elements = document.querySelectorAll(this.selectors);
             const nodes = [];
             for (let el of elements) {
-                if (!el.dataset.translated && el.innerText.trim().length > 1) {
+                // CHỈ BỎ QUA NẾU ĐÃ DỊCH THÀNH CÔNG. Lấy cả thẻ chưa dịch và thẻ bị lỗi (error).
+                if (el.dataset.translated !== "success" && el.innerText.trim().length > 1) {
                     nodes.push({
                         element: el,
                         originalText: el.innerText.trim()
@@ -161,16 +162,34 @@ Do not include markdown code blocks.`;
             nodes.forEach((node, index) => {
                 const translatedText = translatedTexts[index];
                 if (translatedText && translatedText.length > 0) {
+                    const isError = translatedText.startsWith("[Lỗi");
+
+                    // TÌM VÀ XÓA DÒNG BÁO LỖI CŨ (nếu đây là lượt retry)
+                    const existingViNode = node.element.querySelector('.rd-translation-node');
+                    if (existingViNode) {
+                        node.element.removeChild(existingViNode);
+                    }
+
                     const viNode = document.createElement('div');
-                    viNode.style.color = '#10b981';
+                    viNode.className = 'rd-translation-node'; // Gắn class để dễ tracking/dọn dẹp
                     viNode.style.marginTop = '6px';
                     viNode.style.paddingLeft = '10px';
-                    viNode.style.borderLeft = '2px solid #10b981';
                     viNode.style.fontSize = '0.95em';
                     viNode.style.fontStyle = 'italic';
                     viNode.innerText = translatedText;
 
-                    node.element.dataset.translated = "true";
+                    if (isError) {
+                        // Thất bại: Gắn cờ error và tô màu đỏ cảnh báo
+                        viNode.style.color = '#dc3545';
+                        viNode.style.borderLeft = '2px solid #dc3545';
+                        node.element.dataset.translated = "error";
+                    } else {
+                        // Thành công: Gắn cờ success và tô màu xanh ngọc
+                        viNode.style.color = '#10b981';
+                        viNode.style.borderLeft = '2px solid #10b981';
+                        node.element.dataset.translated = "success";
+                    }
+
                     node.element.appendChild(viNode);
                 }
             });
@@ -205,12 +224,10 @@ Do not include markdown code blocks.`;
         renderUI() {
             const config = this.store.load();
 
-            // Tạo Container chứa 2 nút (Cấu hình & Dịch) nằm góc trái dưới
             const floatContainer = document.createElement('div');
             floatContainer.id = 'rd-trans-float-container';
             floatContainer.style.cssText = 'position: fixed; bottom: 20px; left: 20px; z-index: 9999; display: flex; gap: 10px;';
 
-            // Nút Cấu hình
             const configBtn = document.createElement('button');
             configBtn.id = 'rd-trans-config-btn';
             configBtn.innerHTML = '⚙️ Cấu hình';
@@ -218,7 +235,6 @@ Do not include markdown code blocks.`;
             configBtn.onmouseover = () => configBtn.style.transform = 'scale(1.05)';
             configBtn.onmouseout = () => configBtn.style.transform = 'scale(1)';
 
-            // Nút Dịch Ngay
             const runBtn = document.createElement('button');
             runBtn.id = 'rd-trans-run-btn';
             runBtn.innerHTML = '🚀 Dịch ngay';
@@ -230,7 +246,6 @@ Do not include markdown code blocks.`;
             floatContainer.appendChild(runBtn);
             document.body.appendChild(floatContainer);
 
-            // Modal Cấu hình
             const modalHtml = `
             <div id="rd-trans-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width: 320px; background: white; z-index: 10000; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); padding: 20px; font-family: sans-serif; color: #333;">
                 <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px;">Cấu hình Dịch Reddit</h3>
@@ -273,7 +288,6 @@ Do not include markdown code blocks.`;
             const saveBtn = document.getElementById('rd-save');
             const cancelBtn = document.getElementById('rd-cancel');
 
-            // Bật tắt modal cấu hình
             configBtn.onclick = () => modal.style.display = 'block';
             cancelBtn.onclick = () => modal.style.display = 'none';
 
@@ -347,7 +361,7 @@ Do not include markdown code blocks.`;
 
             const nodes = this.domManager.extractPendingNodes();
             if (nodes.length === 0) {
-                console.log("✅ Không có đoạn text mới nào cần dịch trên màn hình.");
+                console.log("✅ Không có đoạn text mới hoặc lỗi nào cần dịch trên màn hình.");
                 return;
             }
 
@@ -404,14 +418,12 @@ Do not include markdown code blocks.`;
 
     const app = new TranslationApp(domManager, configStore, factory);
 
-    console.log("🚀 Đã load tool dịch Reddit (v4.1 - Nút dịch trực tiếp)! Nhấn vào '🚀 Dịch ngay' trên màn hình để chạy.");
+    console.log("🚀 Đã load tool dịch Reddit (v4.2 - Tự động dịch lại lỗi)! Nhấn vào '🚀 Dịch ngay' để chạy.");
 
-    // Liên kết sự kiện click cho nút "Dịch Ngay" trên UI
     document.getElementById('rd-trans-run-btn').addEventListener('click', () => {
         app.execute();
     });
 
-    // Giữ lại phím tắt Alt + T như một phương án backup
     window.addEventListener('keydown', (e) => {
         if (e.altKey && e.code === 'KeyT') {
             e.preventDefault();
