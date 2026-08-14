@@ -1,11 +1,13 @@
 // ==UserScript==
-// @name         Reddit Batch Translator (Clean Arch & Chunking)
+// @name         Reddit Custom Translator (UI Config & Translate Button)
 // @namespace    http://tampermonkey.net/
-// @version      3.0
-// @description  Dịch Reddit theo batch, chia nhỏ chunk theo số từ, có summary rolling để giữ ngữ cảnh.
+// @version      4.1
+// @description  Dịch Reddit theo batch, có UI config chọn engine, model, và nút bấm dịch trực tiếp trên màn hình.
 // @match        *://*.reddit.com/*
 // @match        *://sh.reddit.com/*
 // @grant        GM_xmlhttpRequest
+// @connect      openrouter.ai
+// @connect      translate.googleapis.com
 // ==/UserScript==
 
 (function() {
@@ -14,9 +16,7 @@
     // ==========================================
     // 1. TẦNG DOMAIN & INTERFACE (Trừu tượng)
     // ==========================================
-
     class ITranslator {
-        // Thay đổi signature: Nhận thêm previousContext và trả về { translations: [], summary: "" }
         async translateBatch(texts, previousContext = "") {
             throw new Error("Method 'translateBatch()' must be implemented.");
         }
@@ -25,7 +25,6 @@
     // ==========================================
     // 2. TẦNG INFRASTRUCTURE (Implementations)
     // ==========================================
-
     class GoogleBatchTranslator extends ITranslator {
         async translateBatch(texts, previousContext = "") {
             if (!texts || texts.length === 0) return { translations: [], summary: "" };
@@ -53,8 +52,6 @@
                                     if (item[0]) fullTranslation += item[0];
                                 });
                                 const translatedArray = fullTranslation.split(/\|\|\|/).map(t => t.trim());
-
-                                // Google Translate không sinh được tóm tắt, nên trả về mảng và summary rỗng
                                 resolve({ translations: translatedArray, summary: "" });
                             } catch (e) {
                                 console.error("Lỗi parse JSON:", e);
@@ -74,7 +71,6 @@
     }
 
     class LLMBatchTranslator extends ITranslator {
-	// Nhận config từ bên ngoài truyền vào
         constructor(apiUrl, apiKey, modelName) {
             super();
             this.apiUrl = apiUrl;
@@ -85,14 +81,12 @@
         async translateBatch(texts, previousContext = "") {
             if (!texts || texts.length === 0) return { translations: [], summary: "" };
 
-            // Bổ sung yêu cầu tạo tóm tắt vào Prompt
             let systemPrompt = `Dịch nội dung từ bài post/comment trên Reddit sau sang Tiếng Việt. Lưu ý là việc dịch chay word-by-word có thể không được tự nhiên, nên hãy dịch theo văn phong hoặc cách nói của người Việt. Nếu thấy chỗ nào lủng củng, rườm rà, dài dòng với người Việt, thì hãy viết lại sao cho dễ hiểu hơn. Thuật ngữ cứ để tiếng Anh.
 CRITICAL: You must return the output STRICTLY as a valid JSON object. This object MUST contain two keys:
 1. "translations": an array of strings, matching the exact order and size of the input array.
 2. "summary": a short string summarizing the overall context of what you just translated (to be used as context for the next batch).
 Do not include markdown code blocks.`;
 
-            // Nếu có ngữ cảnh từ mẻ trước, bơm vào cho AI hiểu đầu đuôi
             if (previousContext) {
                 systemPrompt += `\n\nNgữ cảnh từ phần trước của bài viết (để bạn hiểu liền mạch câu chuyện): "${previousContext}"`;
             }
@@ -184,75 +178,195 @@ Do not include markdown code blocks.`;
     }
 
     // ==========================================
-    // 3. TẦNG APPLICATION (Orchestrator)
+    // 3. TẦNG QUẢN LÝ CẤU HÌNH & UI
     // ==========================================
+    class ConfigStore {
+        constructor(defaultConfig) {
+            this.storageKey = 'reddit_translator_settings';
+            this.defaultConfig = defaultConfig;
+        }
+        load() {
+            const saved = localStorage.getItem(this.storageKey);
+            return saved ? { ...this.defaultConfig, ...JSON.parse(saved) } : this.defaultConfig;
+        }
+        save(config) {
+            localStorage.setItem(this.storageKey, JSON.stringify(config));
+        }
+    }
 
-    class TranslationApp {
-        constructor(domManager, translator, maxWordsPerBatch = 600) {
-            this.domManager = domManager;
-            this.translator = translator;
-            this.maxWordsPerBatch = maxWordsPerBatch; // Giới hạn số từ mỗi mẻ
+    class ConfigUIManager {
+        constructor(configStore, availableModels) {
+            this.store = configStore;
+            this.models = availableModels;
+            this.renderUI();
+            this.bindEvents();
         }
 
-        // Hàm hỗ trợ chia mảng nodes thành các chunk dựa trên số lượng từ
-        chunkNodes(nodes) {
+        renderUI() {
+            const config = this.store.load();
+
+            // Tạo Container chứa 2 nút (Cấu hình & Dịch) nằm góc trái dưới
+            const floatContainer = document.createElement('div');
+            floatContainer.id = 'rd-trans-float-container';
+            floatContainer.style.cssText = 'position: fixed; bottom: 20px; left: 20px; z-index: 9999; display: flex; gap: 10px;';
+
+            // Nút Cấu hình
+            const configBtn = document.createElement('button');
+            configBtn.id = 'rd-trans-config-btn';
+            configBtn.innerHTML = '⚙️ Cấu hình';
+            configBtn.style.cssText = 'background: #ff4500; color: white; padding: 10px 15px; border: none; border-radius: 20px; cursor: pointer; font-family: sans-serif; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.2s;';
+            configBtn.onmouseover = () => configBtn.style.transform = 'scale(1.05)';
+            configBtn.onmouseout = () => configBtn.style.transform = 'scale(1)';
+
+            // Nút Dịch Ngay
+            const runBtn = document.createElement('button');
+            runBtn.id = 'rd-trans-run-btn';
+            runBtn.innerHTML = '🚀 Dịch ngay';
+            runBtn.style.cssText = 'background: #10b981; color: white; padding: 10px 15px; border: none; border-radius: 20px; cursor: pointer; font-family: sans-serif; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-weight: bold; transition: all 0.2s;';
+            runBtn.onmouseover = () => runBtn.style.transform = 'scale(1.05)';
+            runBtn.onmouseout = () => runBtn.style.transform = 'scale(1)';
+
+            floatContainer.appendChild(configBtn);
+            floatContainer.appendChild(runBtn);
+            document.body.appendChild(floatContainer);
+
+            // Modal Cấu hình
+            const modalHtml = `
+            <div id="rd-trans-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width: 320px; background: white; z-index: 10000; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); padding: 20px; font-family: sans-serif; color: #333;">
+                <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 10px;">Cấu hình Dịch Reddit</h3>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display:block; font-size: 13px; font-weight: bold; margin-bottom: 5px;">Công cụ dịch:</label>
+                    <select id="rd-engine" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <option value="LLM" ${config.engine === 'LLM' ? 'selected' : ''}>LLM (OpenRouter)</option>
+                        <option value="Google" ${config.engine === 'Google' ? 'selected' : ''}>Google Translate</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display:block; font-size: 13px; font-weight: bold; margin-bottom: 5px;">Chọn Model LLM:</label>
+                    <select id="rd-model" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" ${config.engine === 'Google' ? 'disabled' : ''}>
+                        ${this.models.map(m => `<option value="${m}" ${config.model === m ? 'selected' : ''}>${m}</option>`).join('')}
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display:block; font-size: 13px; font-weight: bold; margin-bottom: 5px;">Số từ tối đa / mẻ:</label>
+                    <input type="number" id="rd-batch" value="${config.maxWordsPerBatch}" min="100" max="2000" step="100" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+
+                <div style="text-align: right;">
+                    <button id="rd-cancel" style="padding: 8px 12px; border: none; background: #eee; border-radius: 4px; cursor: pointer; margin-right: 10px;">Đóng</button>
+                    <button id="rd-save" style="padding: 8px 12px; border: none; background: #ff4500; color: white; border-radius: 4px; cursor: pointer;">Lưu cấu hình</button>
+                </div>
+            </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        bindEvents() {
+            const configBtn = document.getElementById('rd-trans-config-btn');
+            const modal = document.getElementById('rd-trans-modal');
+            const engineSelect = document.getElementById('rd-engine');
+            const modelSelect = document.getElementById('rd-model');
+            const batchInput = document.getElementById('rd-batch');
+            const saveBtn = document.getElementById('rd-save');
+            const cancelBtn = document.getElementById('rd-cancel');
+
+            // Bật tắt modal cấu hình
+            configBtn.onclick = () => modal.style.display = 'block';
+            cancelBtn.onclick = () => modal.style.display = 'none';
+
+            engineSelect.onchange = (e) => {
+                modelSelect.disabled = (e.target.value === 'Google');
+            };
+
+            saveBtn.onclick = () => {
+                const newConfig = {
+                    engine: engineSelect.value,
+                    model: modelSelect.value,
+                    maxWordsPerBatch: parseInt(batchInput.value, 10) || 600
+                };
+                this.store.save(newConfig);
+                modal.style.display = 'none';
+                console.log("✅ Đã cập nhật cấu hình dịch Reddit:", newConfig);
+            };
+        }
+    }
+
+    class TranslatorFactory {
+        constructor(apiUrl, apiKey) {
+            this.apiUrl = apiUrl;
+            this.apiKey = apiKey;
+        }
+
+        create(config) {
+            if (config.engine === 'Google') {
+                return new GoogleBatchTranslator();
+            } else {
+                return new LLMBatchTranslator(this.apiUrl, this.apiKey, config.model);
+            }
+        }
+    }
+
+    // ==========================================
+    // 4. TẦNG APPLICATION (Orchestrator)
+    // ==========================================
+    class TranslationApp {
+        constructor(domManager, configStore, translatorFactory) {
+            this.domManager = domManager;
+            this.configStore = configStore;
+            this.factory = translatorFactory;
+        }
+
+        chunkNodes(nodes, maxWords) {
             const chunks = [];
             let currentChunk = [];
             let currentWordCount = 0;
 
             for (let node of nodes) {
-                // Đếm nhẩm số từ (tách bằng space)
                 const wordCount = node.originalText.split(/\s+/).length;
-
-                // Nếu vượt quá giới hạn và chunk hiện tại đã có data -> Đóng mẻ hiện tại lại
-                if (currentWordCount + wordCount > this.maxWordsPerBatch && currentChunk.length > 0) {
+                if (currentWordCount + wordCount > maxWords && currentChunk.length > 0) {
                     chunks.push(currentChunk);
                     currentChunk = [];
                     currentWordCount = 0;
                 }
-
                 currentChunk.push(node);
                 currentWordCount += wordCount;
             }
 
-            // Đẩy mẻ cuối cùng vào
             if (currentChunk.length > 0) {
                 chunks.push(currentChunk);
             }
-
             return chunks;
         }
 
         async execute() {
+            const config = this.configStore.load();
+            const translator = this.factory.create(config);
+
             const nodes = this.domManager.extractPendingNodes();
             if (nodes.length === 0) {
                 console.log("✅ Không có đoạn text mới nào cần dịch trên màn hình.");
                 return;
             }
 
-            // Chia các nodes ra thành từng mẻ
-            const chunks = this.chunkNodes(nodes);
-            console.log(`⏳ Bắt đầu dịch. Tổng cộng ${nodes.length} đoạn, chia làm ${chunks.length} mẻ.`);
+            const chunks = this.chunkNodes(nodes, config.maxWordsPerBatch);
+            console.log(`⏳ Bắt đầu dịch bằng [${config.engine}]. Tổng cộng ${nodes.length} đoạn, chia làm ${chunks.length} mẻ.`);
 
             let rollingContext = "";
 
-            // Xử lý tuần tự từng mẻ
             for (let i = 0; i < chunks.length; i++) {
                 const currentChunkNodes = chunks[i];
                 console.log(`🔄 Đang dịch mẻ ${i + 1}/${chunks.length}... (Số đoạn: ${currentChunkNodes.length})`);
 
                 const texts = currentChunkNodes.map(n => n.originalText);
 
-                // Gọi AI dịch và truyền ngữ cảnh từ mẻ trước
-                const result = await this.translator.translateBatch(texts, rollingContext);
-
-                // Dịch xong mẻ nào là nhét luôn vào DOM mẻ đấy để người dùng không phải chờ lâu
+                const result = await translator.translateBatch(texts, rollingContext);
                 this.domManager.injectTranslations(currentChunkNodes, result.translations);
 
-                // Cập nhật ngữ cảnh cho mẻ tiếp theo
                 rollingContext = result.summary;
 
-                // Delay một chút giữa các batch để tránh bị API rate limit
                 await new Promise(r => setTimeout(r, 1000));
             }
 
@@ -261,25 +375,46 @@ Do not include markdown code blocks.`;
     }
 
     // ==========================================
-    // 4. BOOTSTRAP (Khởi tạo và chạy)
+    // 5. BOOTSTRAP (Khởi tạo và chạy)
     // ==========================================
 
+    const API_URL = "https://openrouter.ai/api/v1/chat/completions";
+    const API_KEY = "Bearer YOUR_API_KEY";
+
+    const AVAILABLE_MODELS = [
+        "google/gemma-4-26b-a4b-it:free",
+        "google/gemma-4-31b-it:free",
+        "nvidia/nemotron-3-ultra-550b-a55b:free",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "nvidia/nemotron-3-nano-30b-a3b:free",
+        "nvidia/nemotron-nano-9b-v2:free",
+        "openai/gpt-oss-20b:free",
+    ];
+
+    const DEFAULT_CONFIG = {
+        engine: 'LLM',
+        model: AVAILABLE_MODELS[0],
+        maxWordsPerBatch: 600
+    };
+
     const domManager = new RedditDOMManager();
+    const configStore = new ConfigStore(DEFAULT_CONFIG);
+    const uiManager = new ConfigUIManager(configStore, AVAILABLE_MODELS);
+    const factory = new TranslatorFactory(API_URL, API_KEY);
 
-    const translatorService = new LLMBatchTranslator(
-        "https://openrouter.ai/api/v1/chat/completions", 
-        "Bearer YOUR_API_KEY", 
-        "google/gemma-4-26b-a4b-it:free"
-    );
-    // const translatorService = new GoogleBatchTranslator();
+    const app = new TranslationApp(domManager, configStore, factory);
 
-    // Khởi tạo App, set giới hạn mỗi batch khoảng 600 từ (có thể chỉnh lại tuỳ LLM)
-    const app = new TranslationApp(domManager, translatorService, 600);
+    console.log("🚀 Đã load tool dịch Reddit (v4.1 - Nút dịch trực tiếp)! Nhấn vào '🚀 Dịch ngay' trên màn hình để chạy.");
 
-    console.log("🚀 Đã load tool dịch Reddit (v3.0 - Có chia nhỏ & Summary)! Bấm Option + T (trên Mac) để chạy.");
+    // Liên kết sự kiện click cho nút "Dịch Ngay" trên UI
+    document.getElementById('rd-trans-run-btn').addEventListener('click', () => {
+        app.execute();
+    });
 
+    // Giữ lại phím tắt Alt + T như một phương án backup
     window.addEventListener('keydown', (e) => {
         if (e.altKey && e.code === 'KeyT') {
+            e.preventDefault();
             app.execute();
         }
     });
