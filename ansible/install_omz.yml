@@ -8,20 +8,18 @@
     omz_custom_dir: "{{ ansible_env.HOME }}/.oh-my-zsh/custom"
     
     # Danh sách plugin ghi vào .zshrc (cách nhau bởi dấu cách)
-    omz_plugins_list: "zsh-autosuggestions zsh-syntax-highlighting fast-syntax-highlighting zsh-history-substring-search zsh-autocomplete tmux virtualenv conda-env"
+    omz_plugins_list: "zsh-autocomplete zsh-autosuggestions fast-syntax-highlighting zsh-history-substring-search tmux virtualenv conda-env"
     
     # Khai báo các plugin cần tải từ Git
     custom_plugins:
+      - name: zsh-autocomplete
+        repo: "https://github.com/marlonrichert/zsh-autocomplete.git"
       - name: zsh-autosuggestions
         repo: "https://github.com/zsh-users/zsh-autosuggestions.git"
-      - name: zsh-syntax-highlighting
-        repo: "https://github.com/zsh-users/zsh-syntax-highlighting.git"
       - name: fast-syntax-highlighting
         repo: "https://github.com/zdharma-continuum/fast-syntax-highlighting.git"
       - name: zsh-history-substring-search
         repo: "https://github.com/zsh-users/zsh-history-substring-search.git"
-      - name: zsh-autocomplete
-        repo: "https://github.com/marlonrichert/zsh-autocomplete.git"
 
   tasks:
     # ================= 1. XỬ LÝ DEPENDENCY (ZSH) =================
@@ -34,9 +32,9 @@
     - name: Kích hoạt quy trình cài ZSH nếu chưa tìm thấy
       include_tasks: zsh_setup/tasks/main.yml
       vars:
-        install_mode: "apt" # Anh có thể linh hoạt đổi thành "source" nếu chạy trên server
+        install_mode: "source" # Anh có thể linh hoạt đổi thành "source" nếu chạy trên server
         ver_ncurses: "6.4"
-        ver_zsh: "5.9"
+        ver_zsh: "5.9.2"
         local_prefix: "{{ ansible_env.HOME }}/.local"
         build_dir: "/tmp/ansible_build"
       when: zsh_check.rc != 0
@@ -84,6 +82,22 @@
         path: "{{ ansible_env.HOME }}/.zshrc"
         regexp: '^plugins='
         line: 'plugins=({{ omz_plugins_list }})'
+
+    - name: Bổ sung fpath cho zsh-autocomplete trước khi gọi oh-my-zsh
+      lineinfile:
+        path: "{{ ansible_env.HOME }}/.zshrc"
+        insertbefore: '^source \$ZSH/oh-my-zsh\.sh'
+        line: 'fpath=("${ZSH_CUSTOM:-$ZSH/custom}/plugins/zsh-autocomplete/Completions" $fpath)'
+
+    - name: Khai báo dummy widgets tránh cảnh báo unhandled ZLE widget từ syntax highlighting
+      lineinfile:
+        path: "{{ ansible_env.HOME }}/.zshrc"
+        insertbefore: '^source \$ZSH/oh-my-zsh\.sh'
+        line: 'zle -N menu-search 2>/dev/null || true; zle -N recent-paths 2>/dev/null || true'
+
+    - name: Xóa cache zcompdump cũ để Oh-My-Zsh biên dịch lại completion
+      shell: "rm -f {{ ansible_env.HOME }}/.zcompdump*"
+      changed_when: false
 
     - name: Thêm đường dẫn cài đặt local vào PATH trong .zshrc
       lineinfile:
