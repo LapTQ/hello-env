@@ -23,7 +23,7 @@
 - name: Build và Install ncurses
   shell: |
     set -e
-    ./configure --prefix={{ local_prefix }} --with-shared
+    ./configure --prefix={{ local_prefix }} --with-shared --without-cxx --without-cxx-binding
     make -j$(nproc) # Dùng nproc để build đa luồng cho nhanh
     make install
   args:
